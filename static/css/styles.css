@@ -1,0 +1,108 @@
+/* static/css/style.css */
+
+/* Custom styles for Health Companion app */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 25px;
+}
+
+.card-header {
+    font-weight: 600;
+    padding: 15px 20px;
+}
+
+.btn-primary {
+    background-color: #4285f4;
+    border-color: #4285f4;
+}
+
+.btn-primary:hover {
+    background-color: #3367d6;
+    border-color: #3367d6;
+}
+
+/* Hero section */
+.hero-section {
+    background-color: #e8f0fe;
+    padding: 60px 0;
+    margin-bottom: 30px;
+}
+
+/* Feature icons */
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    background-color: #e8f0fe;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.feature-icon i {
+    font-size: 24px;
+    color: #4285f4;
+}
+
+/* Footer */
+footer {
+    margin-top: 50px;
+}
+
+/* Form elements */
+.form-control {
+    padding: 12px;
+    border-radius: 8px;
+}
+
+/* Chat bubbles */
+.chat-bubble {
+    padding: 15px;
+    border-radius: 20px;
+    margin-bottom: 15px;
+    max-width: 80%;
+}
+
+.user-bubble {
+    background-color: #e3f2fd;
+    margin-left: auto;
+    border-bottom-right-radius: 0;
+}
+
+.bot-bubble {
+    background-color: #f5f5f5;
+    margin-right: auto;
+    border-bottom-left-radius: 0;
+}
+
+/* Progress indicators */
+.progress {
+    height: 10px;
+    margin-top: 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 15px;
+    }
+    
+    .feature-card {
+        margin-bottom: 20px;
+    }
+}
+

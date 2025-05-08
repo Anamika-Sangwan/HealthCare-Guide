@@ -1,0 +1,119 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Companion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="text-danger">❤️</span> Health Monitoring
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/symptom_checker">Symptom Checker</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/lipid_profile">Lipid Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/chatbot">Chatbot</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="display-4 text-primary mb-4">Your Health Companion</h1>
+                
+                <p class="lead">Welcome to Health Monitoring, your comprehensive platform for tracking and maintaining your well-being. Our advanced tools help you make informed decisions about your health.</p>
+                
+                <h2 class="mt-5">Why Monitor Your Health?</h2>
+                <p>Regular health monitoring helps you:</p>
+                <ul>
+                    <li>Detect potential health issues early</li>
+                    <li>Track your progress towards health goals</li>
+                    <li>Make informed decisions about your lifestyle</li>
+                    <li>Maintain better communication with healthcare providers</li>
+                </ul>
+                
+                <h2 class="mt-5">Daily Health Tips</h2>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">Regular Exercise</h3>
+                        <p class="card-text">Aim for at least 150 minutes of moderate aerobic activity or 75 minutes of vigorous aerobic activity weekly.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">Balanced Diet</h3>
+                        <p class="card-text">Include a variety of fruits, vegetables, whole grains, lean proteins, and healthy fats in your daily meals.</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">Adequate Sleep</h3>
+                        <p class="card-text">Get 7-9 hours of quality sleep per night to support physical and mental health.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">Key Features</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h4><span class="text-primary">📊</span> Symptom Checker</h4>
+                            <p>Advanced analysis of your symptoms</p>
+                            <a href="/symptom_checker" class="btn btn-outline-primary btn-sm">Try Now</a>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h4><span class="text-primary">📈</span> Lipid Profile Analyzer</h4>
+                            <p>Heart health risk assessment</p>
+                            <a href="/lipid_profile" class="btn btn-outline-primary btn-sm">Try Now</a>
+                        </div>
+                        
+                        <div>
+                            <h4><span class="text-primary">💬</span> Health Chatbot</h4>
+                            <p>24/7 health guidance assistant</p>
+                            <a href="/chatbot" class="btn btn-outline-primary btn-sm">Try Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container text-center">
+            <p>© 2023 Health Companion. All rights reserved.</p>
+            <p class="small">Disclaimer: This application is for educational purposes only and is not intended to replace professional medical advice.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+
