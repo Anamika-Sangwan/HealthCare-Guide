@@ -4,19 +4,22 @@
     <meta charset="UTF-8">
     <title>Medical Voice Notes</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
     <div class="container">
         <h1>🩺 Medical Voice Notes</h1>
         <div class="controls">
-            <button id="start-btn">🎙️ Start</button>
-            <button id="stop-btn">⛔ Stop</button>
+            <button id="start-btn">🎙️ Start Recording</button>
+            <button id="stop-btn">⛔ Stop Recording</button>
             <button id="save-btn">💾 Save Note</button>
         </div>
         <div id="transcript" contenteditable="true" placeholder="Start speaking..."></div>
+        
         <h2>🗂️ Saved Notes</h2>
-        <ul id="notes-list"></ul>
+        <div id="notes-container">
+            <!-- Notes will be loaded here -->
+        </div>
     </div>
 
     <script>
@@ -24,11 +27,118 @@
         const stopBtn = document.getElementById('stop-btn');
         const transcriptDiv = document.getElementById('transcript');
         const saveBtn = document.getElementById('save-btn');
-        const notesList = document.getElementById('notes-list');
+        const notesContainer = document.getElementById('notes-container');
 
         let recognition;
         let isRecording = false;
         let finalTranscript = '';
+
+        // Load existing notes when page loads
+        window.addEventListener('DOMContentLoaded', loadNotes);
+
+        function loadNotes() {
+            fetch('/get_notes')
+                .then(response => response.json())
+                .then(notes => {
+                    notesContainer.innerHTML = '';
+                    notes.forEach(note => {
+                        createNoteCard(note);
+                    });
+                })
+                .catch(error => console.error('Error loading notes:', error));
+        }
+
+        function createNoteCard(noteData) {
+            const noteCard = document.createElement('div');
+            noteCard.className = 'note-card';
+            
+            // Create summary section
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'note-summary';
+            
+            // Age display
+            if (noteData.summary.age) {
+                const ageSpan = document.createElement('span');
+                ageSpan.className = 'info-tag age';
+                ageSpan.textContent = `Age: ${noteData.summary.age}`;
+                summaryDiv.appendChild(ageSpan);
+            }
+            
+            // Name display
+            if (noteData.summary.name) {
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'info-tag name';
+                nameSpan.textContent = `Name: ${noteData.summary.name}`;
+                summaryDiv.appendChild(nameSpan);
+            }
+            
+            // Symptoms display
+            if (noteData.summary.symptoms && noteData.summary.symptoms.length > 0) {
+                const symptomsDiv = document.createElement('div');
+                symptomsDiv.className = 'symptoms-container';
+                
+                const symptomsLabel = document.createElement('span');
+                symptomsLabel.className = 'info-label';
+                symptomsLabel.textContent = 'Symptoms:';
+                symptomsDiv.appendChild(symptomsLabel);
+                
+                const symptomsList = document.createElement('div');
+                symptomsList.className = 'tags-list';
+                
+                noteData.summary.symptoms.forEach(symptom => {
+                    const symptomTag = document.createElement('span');
+                    symptomTag.className = 'info-tag symptom';
+                    symptomTag.textContent = symptom;
+                    symptomsList.appendChild(symptomTag);
+                });
+                
+                symptomsDiv.appendChild(symptomsList);
+                summaryDiv.appendChild(symptomsDiv);
+            }
+            
+            // Family history display
+            if (noteData.summary.family_history && noteData.summary.family_history.length > 0) {
+                const historyDiv = document.createElement('div');
+                historyDiv.className = 'history-container';
+                
+                const historyLabel = document.createElement('span');
+                historyLabel.className = 'info-label';
+                historyLabel.textContent = 'Family History:';
+                historyDiv.appendChild(historyLabel);
+                
+                noteData.summary.family_history.forEach(history => {
+                    const historyItem = document.createElement('p');
+                    historyItem.className = 'history-item';
+                    historyItem.textContent = history;
+                    historyDiv.appendChild(historyItem);
+                });
+                
+                summaryDiv.appendChild(historyDiv);
+            }
+            
+            // Original note text
+            const originalDiv = document.createElement('div');
+            originalDiv.className = 'original-note';
+            originalDiv.textContent = noteData.original;
+            
+            // Toggle button to show/hide full note
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'toggle-note';
+            toggleBtn.textContent = 'Show Full Note';
+            toggleBtn.onclick = function() {
+                const isVisible = originalDiv.style.display === 'block';
+                originalDiv.style.display = isVisible ? 'none' : 'block';
+                toggleBtn.textContent = isVisible ? 'Show Full Note' : 'Hide Full Note';
+            };
+            
+            // Add all elements to note card
+            noteCard.appendChild(summaryDiv);
+            noteCard.appendChild(toggleBtn);
+            noteCard.appendChild(originalDiv);
+            
+            // Add card to container
+            notesContainer.prepend(noteCard);
+        }
 
         if ('webkitSpeechRecognition' in window) {
             recognition = new webkitSpeechRecognition();
@@ -51,40 +161,83 @@
 
             recognition.onerror = function(event) {
                 console.error('Speech recognition error:', event.error);
+                alert('Speech recognition error: ' + event.error);
+            };
+            
+            recognition.onend = function() {
+                console.log('Speech recognition ended');
+                isRecording = false;
+                startBtn.classList.remove('active');
             };
         } else {
             alert("Speech Recognition is not supported in this browser.");
         }
 
-        startBtn.onclick = () => {
+        startBtn.onclick = function() {
+            console.log('Start button clicked');
             if (!isRecording) {
-                recognition.start();
-                isRecording = true;
+                finalTranscript = '';
+                try {
+                    recognition.start();
+                    console.log('Recognition started');
+                    isRecording = true;
+                    startBtn.classList.add('active');
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                } catch (e) {
+                    console.error('Error starting recognition:', e);
+                    alert('Error starting recognition: ' + e.message);
+                }
             }
         };
 
-        stopBtn.onclick = () => {
+        stopBtn.onclick = function() {
+            console.log('Stop button clicked');
             if (isRecording) {
-                recognition.stop();
-                isRecording = false;
+                try {
+                    recognition.stop();
+                    console.log('Recognition stopped');
+                    isRecording = false;
+                    startBtn.classList.remove('active');
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                } catch (e) {
+                    console.error('Error stopping recognition:', e);
+                }
             }
         };
 
-        saveBtn.onclick = () => {
+        saveBtn.onclick = function() {
+            console.log('Save button clicked');
+            const noteText = transcriptDiv.innerText.trim();
+            if (noteText === '') {
+                alert('Please record or type a note first');
+                return;
+            }
+
             fetch('/save_note', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ note: transcriptDiv.innerText })
+                body: JSON.stringify({ note: noteText })
             })
             .then(res => res.json())
             .then(data => {
-                const note = document.createElement('li');
-                note.textContent = transcriptDiv.innerText;
-                notesList.appendChild(note);
+                console.log('Note saved:', data);
+                // Create and display the new note
+                createNoteCard(data);
+                
+                // Clear the transcript
                 finalTranscript = '';
                 transcriptDiv.innerText = '';
+            })
+            .catch(error => {
+                console.error('Error saving note:', error);
+                alert('Failed to save note. Please try again.');
             });
         };
+        
+        // Initialize button states
+        stopBtn.disabled = true;
     </script>
 </body>
 </html>
