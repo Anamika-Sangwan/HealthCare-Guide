@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medical Voice Notes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🩺 Medical Voice Notes</h1>
+        <div class="controls">
+            <button id="start-btn">🎙️ Start</button>
+            <button id="stop-btn">⛔ Stop</button>
+            <button id="save-btn">💾 Save Note</button>
+        </div>
+        <div id="transcript" contenteditable="true" placeholder="Start speaking..."></div>
+        <h2>🗂️ Saved Notes</h2>
+        <ul id="notes-list"></ul>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const transcriptDiv = document.getElementById('transcript');
+        const saveBtn = document.getElementById('save-btn');
+        const notesList = document.getElementById('notes-list');
+
+        let recognition;
+        let isRecording = false;
+        let finalTranscript = '';
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript + ' ';
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                transcriptDiv.innerText = finalTranscript + interimTranscript;
+            };
+
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+            };
+        } else {
+            alert("Speech Recognition is not supported in this browser.");
+        }
+
+        startBtn.onclick = () => {
+            if (!isRecording) {
+                recognition.start();
+                isRecording = true;
+            }
+        };
+
+        stopBtn.onclick = () => {
+            if (isRecording) {
+                recognition.stop();
+                isRecording = false;
+            }
+        };
+
+        saveBtn.onclick = () => {
+            fetch('/save_note', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ note: transcriptDiv.innerText })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const note = document.createElement('li');
+                note.textContent = transcriptDiv.innerText;
+                notesList.appendChild(note);
+                finalTranscript = '';
+                transcriptDiv.innerText = '';
+            });
+        };
+    </script>
+</body>
+</html>

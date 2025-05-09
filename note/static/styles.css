@@ -1,0 +1,59 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f1f5f9;
+    margin: 0;
+    padding: 20px;
+    color: #111827;
+}
+
+.container {
+    max-width: 700px;
+    margin: auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+}
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.controls button {
+    margin: 10px 10px 20px 0;
+    padding: 12px 18px;
+    font-size: 16px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.controls button:hover {
+    background-color: #1d4ed8;
+}
+
+#transcript {
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    min-height: 150px;
+    padding: 15px;
+    font-size: 16px;
+    background-color: #f9fafb;
+    margin-bottom: 30px;
+    white-space: pre-wrap;
+}
+
+ul#notes-list {
+    list-style: disc;
+    padding-left: 20px;
+}
+
+ul#notes-list li {
+    background-color: #eef2ff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
