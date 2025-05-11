@@ -33,6 +33,63 @@
             margin-right: auto;
             border-bottom-left-radius: 5px;
         }
+        /* Additional styling for formatted bot responses */
+        .bot-message p {
+            margin-bottom: 0.7rem;
+        }
+        .bot-message p:last-child {
+            margin-bottom: 0;
+        }
+        .bot-message ul {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+        }
+        .bot-message li {
+            margin-bottom: 0.3rem;
+        }
+        .bot-message h4 {
+            margin-top: 0.7rem;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        .bot-message b, .bot-message strong {
+            color: #0d6efd;
+        }
+        /* Typing indicator animation */
+        .typing-indicator {
+            display: none;
+            background-color: #f0f0f0;
+            padding: 10px 15px;
+            border-radius: 18px;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+            width: fit-content;
+        }
+        .typing-indicator span {
+            height: 10px;
+            width: 10px;
+            float: left;
+            margin: 0 1px;
+            background-color: #9E9EA1;
+            display: block;
+            border-radius: 50%;
+            opacity: 0.4;
+        }
+        .typing-indicator span:nth-of-type(1) {
+            animation: 1s blink infinite 0.3333s;
+        }
+        .typing-indicator span:nth-of-type(2) {
+            animation: 1s blink infinite 0.6666s;
+        }
+        .typing-indicator span:nth-of-type(3) {
+            animation: 1s blink infinite 0.9999s;
+        }
+        @keyframes blink {
+            50% {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -77,6 +134,13 @@
                             </div>
                         </div>
                         
+                        <!-- Typing indicator -->
+                        <div class="typing-indicator" id="typingIndicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        
                         <div class="mt-3">
                             <form id="chatForm" class="d-flex">
                                 <input type="text" class="form-control me-2" id="userMessage" placeholder="Type your health question..." required>
@@ -115,6 +179,7 @@
             const userMessageInput = document.getElementById('userMessage');
             const chatContainer = document.getElementById('chatContainer');
             const suggestionButtons = document.querySelectorAll('.suggestion');
+            const typingIndicator = document.getElementById('typingIndicator');
             
             // Add event listeners to suggestion buttons
             suggestionButtons.forEach(button => {
@@ -136,6 +201,9 @@
                 // Clear input
                 userMessageInput.value = '';
                 
+                // Show typing indicator
+                typingIndicator.style.display = 'block';
+                
                 // Send to backend and get response
                 fetch('/get_chatbot_response', {
                     method: 'POST',
@@ -146,25 +214,37 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
                     // Add bot response to chat
-                    addMessage(data.response, 'bot');
+                    addMessage(data.response, 'bot', data.isHtml || false);
                 })
                 .catch(error => {
+                    // Hide typing indicator
+                    typingIndicator.style.display = 'none';
+                    
                     console.error('Error:', error);
                     addMessage('Sorry, I encountered an error. Please try again.', 'bot');
                 });
             });
             
-            function addMessage(message, sender) {
+            function addMessage(message, sender, isHtml = false) {
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('message');
                 messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
                 
-                const messagePara = document.createElement('p');
-                messagePara.textContent = message;
-                messagePara.classList.add('mb-0');
+                if (sender === 'user' || !isHtml) {
+                    // For user messages or non-HTML bot messages
+                    const messagePara = document.createElement('p');
+                    messagePara.textContent = message;
+                    messagePara.classList.add('mb-0');
+                    messageDiv.appendChild(messagePara);
+                } else {
+                    // For HTML-formatted bot messages
+                    messageDiv.innerHTML = message;
+                }
                 
-                messageDiv.appendChild(messagePara);
                 chatContainer.appendChild(messageDiv);
                 
                 // Scroll to bottom

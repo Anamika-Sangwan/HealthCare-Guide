@@ -1,13 +1,3 @@
-# Health Companion Flask Application
-# Directory Structure:
-# - app.py (main Flask application)
-# - models/ (ML models)
-#   - symptom_checker.py
-#   - lipid_analyzer.py 
-# - static/ (CSS, JS, images)
-# - templates/ (HTML templates)
-# - requirements.txt
-
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import numpy as np
@@ -15,10 +5,12 @@ import pickle
 import os
 from models.symptom_checker import predict_disease
 from models.lipid_analyzer import analyze_lipid_profile
+import google.generativeai as genai
+
+# Configure API Key
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyBdVIKupl8M2pIun55RE-ZhOKcqG_1k-Ko"))
 
 app = Flask(__name__)
-
-# Load ML models
 
 @app.route('/')
 def home():
@@ -82,30 +74,85 @@ def chatbot():
 def get_chatbot_response():
     user_message = request.form.get('user_message', '')
     
-    # Simple rule-based responses for demonstration
-    responses = {
-        'fever': 'If you have a fever, rest and drink plenty of fluids. If it\'s high or persists, seek medical attention.',
-        'headache': 'For headaches, ensure you\'re hydrated and try over-the-counter pain relievers. If severe or persistent, consult a doctor.',
-        'cough': 'For a cough, stay hydrated and use honey (if not allergic). See a doctor if it persists more than a week.',
-        'diet': 'A balanced diet includes a variety of fruits, vegetables, whole grains, lean proteins, and healthy fats.',
-        'exercise': 'Aim for at least 150 minutes of moderate aerobic activity or 75 minutes of vigorous aerobic activity weekly.',
-        'sleep': 'Getting 7-9 hours of quality sleep per night supports physical and mental health.',
-        'cholesterol': 'Maintain healthy cholesterol with diet, exercise, and sometimes medication. Regular testing is important.',
-        'blood pressure': 'Keep blood pressure healthy with diet, exercise, limited salt intake, and stress management.',
-        'diabetes': 'Manage diabetes through diet, exercise, medication as prescribed, and regular monitoring.',
-        'stress': 'Manage stress through exercise, mindfulness, adequate sleep, and seeking support when needed.'
-    }
+    # Define system prompt (the behavior of the chatbot)
+    system_prompt = (
+        "You are a helpful, friendly health assistant chatbot who gives assurance and strength to users. "
+        "You provide general health information and advice, such as tips for managing common symptoms, improving wellness, maintaining a healthy lifestyle, and addressing mental health concerns. You can prescribe basic medicines. "
+        "If a user asks for medical advice or symptoms that may require professional diagnosis, always recommend they consult a healthcare provider. "
+        "Be empathetic, clear, and concise in your responses."
+        "\n\nIMPORTANT FORMATTING INSTRUCTIONS: Format your responses using structured HTML. Use:"
+        "\n- <p> tags for paragraphs"
+        "\n- <b> or <strong> tags for emphasis"
+        "\n- <ul> and <li> tags for lists of items"
+        "\n- <h4> tags for small headings within your response"
+        "\nWhen listing multiple items like symptoms or tips, ALWAYS use <ul> and <li> tags."
+    )
     
-    # Default response
-    response = "I'm your health assistant. How can I help you today? You can ask me about symptoms, diet, exercise, sleep, or common health conditions."
-    
-    # Check if any keywords match
-    for keyword, resp in responses.items():
-        if keyword in user_message.lower():
-            response = resp
-            break
+    try:
+        # Create a model instance - use a more reliable model or fallback to a less resource-intensive one
+        try:
+            model = genai.GenerativeModel('gemini-1.5-pro')
+        except Exception:
+            # If the 1.5 model has quota issues, fallback to 1.0
+            model = genai.GenerativeModel('gemini-1.0-pro')
+        
+        # Combine prompts to reduce API calls
+        combined_prompt = f"{system_prompt}\n\nUser: {user_message}\n\nPlease format your response with proper HTML."
+        
+        # Generate content directly
+        response = model.generate_content(combined_prompt)
+        
+        # Get the response text
+        chatbot_reply = response.text
+        
+        # Process the response to ensure it contains HTML formatting
+        # First, check if the model wrapped the response in code blocks
+        import re
+        chatbot_reply = re.sub(r'```html|```', '', chatbot_reply)
+        
+        # If there are no HTML tags, add basic formatting
+        if '<p>' not in chatbot_reply and '<li>' not in chatbot_reply:
+            # Split into paragraphs
+            paragraphs = chatbot_reply.split('\n\n')
+            formatted_reply = ""
             
-    return jsonify({'response': response})
+            for para in paragraphs:
+                if not para.strip():
+                    continue
+                    
+                # Check if this paragraph is a list (starts with * or -)
+                if re.search(r'^\s*[\*\-]', para, re.MULTILINE):
+                    # Convert to HTML list
+                    items = re.split(r'\s*[\*\-]\s+', para)
+                    formatted_reply += '<ul>'
+                    for item in items:
+                        if item.strip():
+                            formatted_reply += f'<li>{item.strip()}</li>'
+                    formatted_reply += '</ul>'
+                else:
+                    # Regular paragraph
+                    formatted_reply += f'<p>{para}</p>'
+            
+            chatbot_reply = formatted_reply if formatted_reply else f'<p>{chatbot_reply}</p>'
+        
+        # Format keywords like "Rest", "Hydration" with bold
+        keywords = ['Rest', 'Hydration', 'Diet', 'Exercise', 'Sleep', 'Water', 'Medication']
+        for keyword in keywords:
+            chatbot_reply = re.sub(fr'\b{keyword}\b', f'<b>{keyword}</b>', chatbot_reply)
+            
+        return jsonify({'response': chatbot_reply, 'isHtml': True})
+    except Exception as e:
+        error_msg = str(e)
+        # Give a more user-friendly error for quota issues
+        if "429" in error_msg or "quota" in error_msg.lower():
+            return jsonify({
+                'response': '<p>I\'m currently experiencing high demand. Please try again in a few minutes.</p>',
+                'isHtml': True
+            })
+        return jsonify({
+            'response': f"<p>Sorry, I couldn't process that right now. Please try again later.</p>",
+            'isHtml': True
+        })
 
 if __name__ == '__main__':
     app.run(debug=True)
