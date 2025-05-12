@@ -1,102 +1,98 @@
-<!-- templates/ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Health Chatbot - Health Companion</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>AI Health Assistant - Health Companion</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
     <style>
+        /* Additional Chatbot-Specific Styling */
         .chat-container {
-            height: 400px;
-            overflow-y: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            background-color: var(--white);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--accent-color);
+            overflow: hidden;
         }
+
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            background-color: var(--background-light);
+            border-top: 1px solid var(--accent-color);
+        }
+
         .message {
-            margin-bottom: 15px;
-            padding: 10px 15px;
-            border-radius: 18px;
-            max-width: 75%;
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            line-height: 1.5;
             position: relative;
         }
+
         .user-message {
-            background-color: #e3f2fd;
+            align-self: flex-end;
+            background-color: var(--primary-color);
+            color: var(--white);
             margin-left: auto;
-            border-bottom-right-radius: 5px;
         }
+
         .bot-message {
-            background-color: #f0f0f0;
+            align-self: flex-start;
+            background-color: var(--background-light);
+            color: var(--text-primary);
             margin-right: auto;
-            border-bottom-left-radius: 5px;
         }
-        /* Additional styling for formatted bot responses */
-        .bot-message p {
-            margin-bottom: 0.7rem;
+
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
         }
-        .bot-message p:last-child {
-            margin-bottom: 0;
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
         }
-        .bot-message ul {
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
-            padding-left: 1.5rem;
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: var(--background-light);
         }
-        .bot-message li {
-            margin-bottom: 0.3rem;
-        }
-        .bot-message h4 {
-            margin-top: 0.7rem;
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-        .bot-message b, .bot-message strong {
-            color: #0d6efd;
-        }
-        /* Typing indicator animation */
-        .typing-indicator {
-            display: none;
-            background-color: #f0f0f0;
-            padding: 10px 15px;
-            border-radius: 18px;
-            margin-right: auto;
-            border-bottom-left-radius: 5px;
-            width: fit-content;
-        }
-        .typing-indicator span {
-            height: 10px;
-            width: 10px;
-            float: left;
-            margin: 0 1px;
-            background-color: #9E9EA1;
-            display: block;
-            border-radius: 50%;
-            opacity: 0.4;
-        }
-        .typing-indicator span:nth-of-type(1) {
-            animation: 1s blink infinite 0.3333s;
-        }
-        .typing-indicator span:nth-of-type(2) {
-            animation: 1s blink infinite 0.6666s;
-        }
-        .typing-indicator span:nth-of-type(3) {
-            animation: 1s blink infinite 0.9999s;
-        }
-        @keyframes blink {
-            50% {
-                opacity: 1;
-            }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background-color: var(--accent-color);
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <span class="text-danger">❤️</span> Health Monitoring
+                <i data-feather="heart" class="text-danger me-2"></i> Health Companion
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -107,150 +103,312 @@
                         <a class="nav-link" href="/">Home</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="/note">Note Appointment</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="/symptom_checker">Symptom Checker</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/lipid_profile">Lipid Profile</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/chatbot">Chatbot</a>
+                        <a class="nav-link active" href="/chatbot">Health Chatbot</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <h2 class="mb-0">Health Chatbot</h2>
+    <!-- Main Chatbot Container -->
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="card shadow-soft">
+                    <div class="card-header">
+                        <h2 class="mb-0">
+                            <i data-feather="message-circle" class="me-2 text-primary"></i> 
+                            AI Health Assistant
+                        </h2>
                     </div>
-                    <div class="card-body">
-                        <div class="chat-container" id="chatContainer">
+                    
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatContainer">
                             <div class="message bot-message">
-                                <p>Hello! I'm your health assistant. How can I help you today?</p>
+                                <p class="mb-0">Hello! I'm your AI health assistant. How can I help you today?</p>
                             </div>
                         </div>
                         
-                        <!-- Typing indicator -->
-                        <div class="typing-indicator" id="typingIndicator">
+                        <!-- Typing Indicator -->
+                        <div class="typing-indicator" id="typingIndicator" style="display: none;">
                             <span></span>
                             <span></span>
                             <span></span>
                         </div>
+                    </div>
+                    
+                    <!-- Chat Input Area -->
+                    <div class="chat-input-area">
+                        <form id="chatForm" class="d-flex align-items-center">
+                            <input type="text" class="form-control me-2" id="userMessage" 
+                                   placeholder="Ask a health-related question..." required>
+                            <button type="submit" class="btn btn-primary">
+                                <i data-feather="send"></i>
+                            </button>
+                        </form>
                         
-                        <div class="mt-3">
-                            <form id="chatForm" class="d-flex">
-                                <input type="text" class="form-control me-2" id="userMessage" placeholder="Type your health question..." required>
-                                <button type="submit" class="btn btn-primary">Send</button>
-                            </form>
+                        <!-- Suggestion Chips -->
+                        <div class="suggestion-chips">
+                            <button class="suggestion">Fever</button>
+                            <button class="suggestion">Headache</button>
+                            <button class="suggestion">Diet</button>
+                            <button class="suggestion">Exercise</button>
+                            <button class="suggestion">Sleep</button>
+                            <button class="suggestion">Stress</button>
                         </div>
-                        
-                        <div class="mt-4">
-                            <p class="text-muted">You can ask about:</p>
-                            <div class="d-flex flex-wrap gap-2">
-                                <button class="btn btn-sm btn-outline-secondary suggestion">Fever</button>
-                                <button class="btn btn-sm btn-outline-secondary suggestion">Headache</button>
-                                <button class="btn btn-sm btn-outline-secondary suggestion">Diet</button>
-                                <button class="btn btn-sm btn-outline-secondary suggestion">Exercise</button>
-                                <button class="btn btn-sm btn-outline-secondary suggestion">Sleep</button>
-                                <button class="btn btn-sm btn-outline-secondary suggestion">Stress</button>
-                            </div>
-                        </div>
+                    </div>
+                </div>
+                
+                <!-- Info Card -->
+                <div class="card mt-4 shadow-soft">
+                    <div class="card-body">
+                        <h4 class="text-primary mb-3">
+                            <i data-feather="info" class="me-2"></i> About Our AI Health Assistant
+                        </h4>
+                        <p class="text-secondary">
+                            Our AI Health Assistant provides general health information and guidance. 
+                            Remember that this tool is not a substitute for professional medical advice. 
+                            Always consult with a healthcare provider for personalized medical recommendations.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer class="bg-dark text-white mt-5 py-4">
-        <div class="container text-center">
-            <p>© 2023 Health Companion. All rights reserved.</p>
-            <p class="small">Disclaimer: This application is for educational purposes only and is not intended to replace professional medical advice.</p>
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="text-secondary">
+                    © 2024 Health Companion. All rights reserved.
+                </div>
+                <div class="text-secondary">
+                    Disclaimer: For educational purposes only. Not a substitute for professional medical advice.
+                </div>
+            </div>
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const chatForm = document.getElementById('chatForm');
-            const userMessageInput = document.getElementById('userMessage');
-            const chatContainer = document.getElementById('chatContainer');
-            const suggestionButtons = document.querySelectorAll('.suggestion');
-            const typingIndicator = document.getElementById('typingIndicator');
-            
-            // Add event listeners to suggestion buttons
-            suggestionButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    userMessageInput.value = this.textContent;
-                    chatForm.dispatchEvent(new Event('submit'));
-                });
+    const chatForm = document.getElementById('chatForm');
+    const userMessageInput = document.getElementById('userMessage');
+    const chatContainer = document.getElementById('chatContainer');
+    const suggestionButtons = document.querySelectorAll('.suggestion');
+    const typingIndicator = document.getElementById('typingIndicator');
+    
+    // Enhanced suggestion generation based on context
+    const healthTopics = [
+        'Nutrition', 'Mental Health', 'Exercise', 
+        'Sleep', 'Stress Management', 'Preventive Care'
+    ];
+    
+    function updateSuggestionChips(context) {
+        const suggestionsContainer = document.querySelector('.suggestion-chips');
+        suggestionsContainer.innerHTML = ''; // Clear existing suggestions
+        
+        const dynamicSuggestions = context ? 
+            healthTopics.filter(topic => 
+                topic.toLowerCase().includes(context.toLowerCase())
+            ).slice(0, 6) : 
+            ['Fever', 'Headache', 'Diet', 'Exercise', 'Sleep', 'Stress'];
+        
+        dynamicSuggestions.forEach(topic => {
+            const button = document.createElement('button');
+            button.classList.add('suggestion');
+            button.textContent = topic;
+            button.addEventListener('click', function() {
+                userMessageInput.value = `Tell me about ${topic}`;
+                chatForm.dispatchEvent(new Event('submit'));
             });
-            
-            chatForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const userMessage = userMessageInput.value.trim();
-                if (!userMessage) return;
-                
-                // Add user message to chat
-                addMessage(userMessage, 'user');
-                
-                // Clear input
-                userMessageInput.value = '';
-                
-                // Show typing indicator
-                typingIndicator.style.display = 'block';
-                
-                // Send to backend and get response
-                fetch('/get_chatbot_response', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `user_message=${encodeURIComponent(userMessage)}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Hide typing indicator
-                    typingIndicator.style.display = 'none';
-                    
-                    // Add bot response to chat
-                    addMessage(data.response, 'bot', data.isHtml || false);
-                })
-                .catch(error => {
-                    // Hide typing indicator
-                    typingIndicator.style.display = 'none';
-                    
-                    console.error('Error:', error);
-                    addMessage('Sorry, I encountered an error. Please try again.', 'bot');
-                });
-            });
-            
-            function addMessage(message, sender, isHtml = false) {
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('message');
-                messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
-                
-                if (sender === 'user' || !isHtml) {
-                    // For user messages or non-HTML bot messages
-                    const messagePara = document.createElement('p');
-                    messagePara.textContent = message;
-                    messagePara.classList.add('mb-0');
-                    messageDiv.appendChild(messagePara);
-                } else {
-                    // For HTML-formatted bot messages
-                    messageDiv.innerHTML = message;
-                }
-                
-                chatContainer.appendChild(messageDiv);
-                
-                // Scroll to bottom
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
+            suggestionsContainer.appendChild(button);
         });
+    }
+    
+    // Voice input functionality with improved error handling
+    function initVoiceInput() {
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+            
+            const voiceButton = document.createElement('button');
+            voiceButton.innerHTML = '<i data-feather="mic"></i>';
+            voiceButton.type = 'button';  // Prevent form submission
+            voiceButton.classList.add('btn', 'btn-outline-primary', 'ms-2', 'voice-input-btn');
+            
+            voiceButton.addEventListener('click', () => {
+                try {
+                    recognition.start();
+                    voiceButton.classList.add('active');
+                    voiceButton.disabled = true;
+                } catch (error) {
+                    console.error('Voice recognition error:', error);
+                    alert('Voice input is not supported or microphone access is denied.');
+                }
+            });
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript.trim();
+                if (transcript) {
+                    userMessageInput.value = transcript;
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+            };
+            
+            recognition.onend = () => {
+                voiceButton.classList.remove('active');
+                voiceButton.disabled = false;
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                voiceButton.classList.remove('active');
+                voiceButton.disabled = false;
+                
+                // Provide user-friendly error messages
+                switch(event.error) {
+                    case 'no-speech':
+                        alert('No speech was detected. Please try again.');
+                        break;
+                    case 'audio-capture':
+                        alert('No microphone was found. Ensure microphone is connected.');
+                        break;
+                    case 'not-allowed':
+                        alert('Microphone access is blocked. Please check browser settings.');
+                        break;
+                    default:
+                        alert('An error occurred with voice input. Please try again.');
+                }
+            };
+            
+            // Add voice button to the form
+            chatForm.appendChild(voiceButton);
+            feather.replace(); // Refresh Feather icons
+        } else {
+            console.warn('Speech recognition not supported');
+        }
+    }
+    
+    // Message sentiment analysis (placeholder)
+    function analyzeSentiment(message) {
+        const positiveKeywords = ['good', 'great', 'happy', 'well', 'better'];
+        const negativeKeywords = ['bad', 'terrible', 'sick', 'pain', 'worried'];
+        
+        const lowerMessage = message.toLowerCase();
+        const positiveScore = positiveKeywords.filter(word => 
+            lowerMessage.includes(word)
+        ).length;
+        const negativeScore = negativeKeywords.filter(word => 
+            lowerMessage.includes(word)
+        ).length;
+        
+        return positiveScore > negativeScore ? 'positive' : 
+               negativeScore > positiveScore ? 'negative' : 'neutral';
+    }
+    
+    // Enhanced message display with sentiment
+    function addMessage(message, sender, isHtml = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message');
+        messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+        
+        if (sender === 'user') {
+            const sentiment = analyzeSentiment(message);
+            messageDiv.dataset.sentiment = sentiment;
+        }
+        
+        if (sender === 'user' || !isHtml) {
+            const messagePara = document.createElement('p');
+            messagePara.textContent = message;
+            messagePara.classList.add('mb-0');
+            messageDiv.appendChild(messagePara);
+        } else {
+            messageDiv.innerHTML = message;
+        }
+        
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        
+        // Update suggestion chips based on last message context
+        if (sender === 'user') {
+            updateSuggestionChips(message);
+        }
+    }
+    
+    // Simulated typing animation
+    function simulateTyping(duration = 1500) {
+        typingIndicator.style.display = 'flex';
+        setTimeout(() => {
+            typingIndicator.style.display = 'none';
+        }, duration);
+    }
+    
+    // Add event listeners to suggestion buttons
+    suggestionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            userMessageInput.value = this.textContent;
+            chatForm.dispatchEvent(new Event('submit'));
+        });
+    });
+    
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const userMessage = userMessageInput.value.trim();
+        if (!userMessage) return;
+        
+        // Add user message to chat
+        addMessage(userMessage, 'user');
+        
+        // Clear input
+        userMessageInput.value = '';
+        
+        // Show typing indicator
+        simulateTyping();
+        
+        // Send to backend and get response
+        fetch('/get_chatbot_response', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `user_message=${encodeURIComponent(userMessage)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Add bot response to chat
+            addMessage(data.response, 'bot', data.isHtml || false);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        });
+    });
+    
+    // Initialize voice input
+    initVoiceInput();
+    
+    // Initial suggestions
+    updateSuggestionChips();
+});
+
+// Initialize Feather Icons
+feather.replace();
     </script>
 </body>
 </html>

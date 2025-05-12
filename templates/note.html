@@ -4,10 +4,215 @@
     <meta charset="UTF-8">
     <title>Medical Voice Notes</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/styles.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+<style>
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #1e40af;
+}
+
+h2 {
+    font-size: 22px;
+    margin: 25px 0 15px;
+    color: #1e40af;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 8px;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.controls button {
+    padding: 12px 18px;
+    font-size: 16px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    flex: 1;
+    max-width: 150px;
+    transition: all 0.2s ease;
+}
+
+.controls button:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+button.active {
+    background-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+#transcript {
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    min-height: 150px;
+    padding: 15px;
+    font-size: 16px;
+    background-color: #f9fafb;
+    margin-bottom: 30px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+#notes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.note-card {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.note-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.info-tag {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.info-tag.age {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.info-tag.name {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.info-tag.symptom {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.symptoms-container, .history-container {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.info-label {
+    font-weight: 600;
+    margin-right: 8px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.history-item {
+    background-color: #f3e8ff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 5px 0;
+    color: #6b21a8;
+}
+
+.original-note {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f3f4f6;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    display: none;
+}
+
+.toggle-note {
+    background-color: #e2e8f0;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.toggle-note:hover {
+    background-color: #cbd5e1;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+    
+    .controls {
+        flex-direction: column;
+    }
+    
+    .controls button {
+        max-width: none;
+    }
+}
+</style>
 </head>
 <body>
-    <div class="container">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i data-feather="heart" class="text-danger me-2"></i> Health Companion
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/note">Note Appointment</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/symptom_checker">Symptom Checker</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/lipid_profile">Lipid Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/chatbot">Health Chatbot</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
         <h1>🩺 Medical Voice Notes</h1>
         <div class="controls">
             <button id="start-btn">🎙️ Start Recording</button>
@@ -238,6 +443,11 @@
         
         // Initialize button states
         stopBtn.disabled = true;
+    </script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
     </script>
 </body>
 </html>

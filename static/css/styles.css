@@ -1,108 +1,282 @@
-/* static/css/style.css */
-
-/* Custom styles for Health Companion app */
+/* General layout and fonts */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
+    font-family: 'Inter', sans-serif;
+    background-color: #fdf6f0; /* soft peach pastel */
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar */
+.navbar {
+    background-color: #ffe0e9; /* light pastel pink */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .navbar-brand {
-    font-weight: bold;
-    font-size: 1.3rem;
-}
-
-.card {
-    border-radius: 10px;
-    overflow: hidden;
-    border: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 25px;
-}
-
-.card-header {
     font-weight: 600;
-    padding: 15px 20px;
+    font-size: 1.5rem;
+    color: #d63384;
 }
 
+.nav-link {
+    color: #6c567b !important;
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #d63384 !important;
+    text-decoration: underline;
+}
+
+/* Buttons */
 .btn-primary {
-    background-color: #4285f4;
-    border-color: #4285f4;
+    background-color: #a1c4fd;
+    border: none;
+    transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-    background-color: #3367d6;
-    border-color: #3367d6;
+    background-color: #87b0f9;
+    transform: scale(1.05);
 }
 
-/* Hero section */
-.hero-section {
-    background-color: #e8f0fe;
-    padding: 60px 0;
-    margin-bottom: 30px;
+.btn-outline-primary {
+    border-color: #a1c4fd;
+    color: #4a6fa5;
+    transition: all 0.3s ease;
 }
 
-/* Feature icons */
-.feature-icon {
-    width: 60px;
-    height: 60px;
-    background-color: #e8f0fe;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 15px;
+.btn-outline-primary:hover {
+    background-color: #dcecff;
+    transform: scale(1.05);
 }
 
-.feature-icon i {
-    font-size: 24px;
-    color: #4285f4;
+/* Cards */
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+    background-color: #fffafc; /* very light pink */
+    transition: transform 0.3s ease;
 }
 
-/* Footer */
+.card:hover {
+    transform: scale(1.01);
+}
+
+/* Card headers */
+.card-header {
+    background-color: #ffe4f3; /* light pastel pink */
+    border-bottom: none;
+    font-weight: 500;
+    font-size: 1.25rem;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 0.75rem;
+}
+
+.alert-success {
+    background-color: #d4f5dc;
+    color: #1b5e20;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Checkbox styling */
+.symptom-checkbox input[type="checkbox"] {
+    accent-color: #a1c4fd;
+}
+
+/* Footer styling */
 footer {
-    margin-top: 50px;
+    background-color: #ffe0e9;
+    padding: 1rem;
+    text-align: center;
+    color: #6c567b;
+    font-size: 0.9rem;
+    margin-top: 2rem;
 }
 
-/* Form elements */
-.form-control {
-    padding: 12px;
+
+
+
+h1 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #1e40af;
+}
+
+h2 {
+    font-size: 22px;
+    margin: 25px 0 15px;
+    color: #1e40af;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 8px;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.controls button {
+    padding: 12px 18px;
+    font-size: 16px;
+    background-color: #2563eb;
+    color: white;
+    border: none;
     border-radius: 8px;
+    cursor: pointer;
+    flex: 1;
+    max-width: 150px;
+    transition: all 0.2s ease;
 }
 
-/* Chat bubbles */
-.chat-bubble {
+.controls button:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-2px);
+}
+
+button.active {
+    background-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
+}
+
+#transcript {
+    border: 2px solid #d1d5db;
+    border-radius: 8px;
+    min-height: 150px;
     padding: 15px;
-    border-radius: 20px;
-    margin-bottom: 15px;
-    max-width: 80%;
+    font-size: 16px;
+    background-color: #f9fafb;
+    margin-bottom: 30px;
+    white-space: pre-wrap;
+    line-height: 1.5;
 }
 
-.user-bubble {
-    background-color: #e3f2fd;
-    margin-left: auto;
-    border-bottom-right-radius: 0;
+#notes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.bot-bubble {
-    background-color: #f5f5f5;
-    margin-right: auto;
-    border-bottom-left-radius: 0;
+.note-card {
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-/* Progress indicators */
-.progress {
-    height: 10px;
-    margin-top: 5px;
+.note-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .card-body {
-        padding: 15px;
+.info-tag {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.info-tag.age {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.info-tag.name {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.info-tag.symptom {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+.symptoms-container, .history-container {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.info-label {
+    font-weight: 600;
+    margin-right: 8px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.history-item {
+    background-color: #f3e8ff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 5px 0;
+    color: #6b21a8;
+}
+
+.original-note {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f3f4f6;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    display: none;
+}
+
+.toggle-note {
+    background-color: #e2e8f0;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.toggle-note:hover {
+    background-color: #cbd5e1;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
     }
     
-    .feature-card {
-        margin-bottom: 20px;
+    .controls {
+        flex-direction: column;
+    }
+    
+    .controls button {
+        max-width: none;
     }
 }
-

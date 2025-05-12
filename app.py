@@ -6,6 +6,7 @@ import os
 from models.symptom_checker import predict_disease
 from models.lipid_analyzer import analyze_lipid_profile
 import google.generativeai as genai
+import re
 
 # Configure API Key
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyBdVIKupl8M2pIun55RE-ZhOKcqG_1k-Ko"))
@@ -153,6 +154,129 @@ def get_chatbot_response():
             'response': f"<p>Sorry, I couldn't process that right now. Please try again later.</p>",
             'isHtml': True
         })
+    
+@app.route('/note')
+def index():
+    return render_template('note.html')
+
+def extract_medical_info(text):
+    """Extract medical information using improved pattern matching"""
+    try:
+        # Initialize extracted information structure
+        extracted_info = {
+            "name": None,
+            "age": None,
+            "symptoms": [],
+            "family_history": []
+        }
+        
+        # Try to extract name (this is a simple implementation, might need refinement)
+        name_patterns = [
+            r'my name is (\w+)',
+            r'i\'m (\w+)',
+            r'call me (\w+)'
+        ]
+        for pattern in name_patterns:
+            name_match = re.search(pattern, text, re.IGNORECASE)
+            if name_match:
+                extracted_info["name"] = name_match.group(1)
+                break
+        
+        # Extract age using more flexible regex pattern
+        age_patterns = [
+            r'\b(\d{1,3})[\s-]*(years?|yrs?|y\.o\.?|year old)\b',
+            r'\b(I am|I\'m)\s+(\d{1,3})\s*(years? old)\b'
+        ]
+        for pattern in age_patterns:
+            age_match = re.search(pattern, text, re.IGNORECASE)
+            if age_match:
+                # Extract the numeric part
+                extracted_info["age"] = re.search(r'\d+', age_match.group(0)).group(0) + " years"
+                break
+        
+        # Expanded list of common symptoms
+        common_symptoms = [
+            "fever", "headache", "pain", "cough", "cold", "nausea", 
+            "vomiting", "dizziness", "fatigue", "tired", "sore throat",
+            "cannot sleep", "insomnia", "ache", "hurt", "rash", 
+            "chest pain", "stomach ache", "migraine", "allergies", 
+            "breathing difficulty", "congestion"
+        ]
+        
+        # Look for symptoms (more robust matching)
+        for symptom in common_symptoms:
+            # Use word boundaries to prevent partial word matches
+            symptom_pattern = fr'\b{re.escape(symptom)}\b'
+            if re.search(symptom_pattern, text, re.IGNORECASE):
+                # Avoid duplicate symptoms
+                if symptom not in extracted_info["symptoms"]:
+                    extracted_info["symptoms"].append(symptom)
+        
+        # Look for family history with more context
+        family_history_patterns = [
+            r'family history of (\w+)',
+            r'my (mother|father|brother|sister|grandfather|grandmother) had',
+            r'family medical history'
+        ]
+        for pattern in family_history_patterns:
+            family_match = re.findall(pattern, text, re.IGNORECASE)
+            if family_match:
+                extracted_info["family_history"].extend(family_match)
+        
+        # Remove duplicates from lists
+        extracted_info["symptoms"] = list(dict.fromkeys(extracted_info["symptoms"]))
+        extracted_info["family_history"] = list(dict.fromkeys(extracted_info["family_history"]))
+        
+        return extracted_info
+    except Exception as e:
+        print(f"Error extracting medical info: {str(e)}")
+        return {
+            "name": None,
+            "age": None,
+            "symptoms": [],
+            "family_history": []
+        }
+
+def get_all_notes():
+    """Read all notes from the file"""
+    try:
+        with open('notes.txt', 'r') as f:
+            content = f.read()
+            notes = content.split('---\n')
+            return [note.strip() for note in notes if note.strip()]
+    except FileNotFoundError:
+        return []
+
+@app.route('/get_notes', methods=['GET'])
+def fetch_notes():
+    notes = get_all_notes()
+    processed_notes = []
+    
+    for note in notes:
+        summary = extract_medical_info(note)
+        processed_notes.append({
+            "original": note,
+            "summary": summary
+        })
+    
+    return jsonify(processed_notes)
+
+@app.route('/save_note', methods=['POST'])
+def save_note():
+    data = request.get_json()
+    note = data['note']
+    
+    with open('notes.txt', 'a') as f:
+        f.write(note + '\n---\n')  # separates notes with dashes
+    
+    # Process the note for medical information
+    summary = extract_medical_info(note)
+    
+    return jsonify({
+        'status': 'success',
+        'original': note,
+        'summary': summary
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)
