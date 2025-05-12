@@ -62,7 +62,7 @@ body {
 }
 
 .card:hover {
-    transform: scale(1.01);
+    transform: scale(2);
 }
 
 /* Card headers */
@@ -280,3 +280,8 @@ button.active {
         max-width: none;
     }
 }
+
+
+
+
+

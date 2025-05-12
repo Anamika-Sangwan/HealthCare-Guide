@@ -3,10 +3,8 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-from models.symptom_checker import predict_disease
-from models.lipid_analyzer import analyze_lipid_profile
-import google.generativeai as genai
 import re
+import google.generativeai as genai
 
 # Configure API Key
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", "AIzaSyBdVIKupl8M2pIun55RE-ZhOKcqG_1k-Ko"))
@@ -160,72 +158,78 @@ def index():
     return render_template('note.html')
 
 def extract_medical_info(text):
-    """Extract medical information using improved pattern matching"""
+    """Extract medical information using Gemini AI"""
     try:
-        # Initialize extracted information structure
-        extracted_info = {
-            "name": None,
-            "age": None,
-            "symptoms": [],
-            "family_history": []
-        }
+        # Initialize model
+        try:
+            model = genai.GenerativeModel('gemini-1.5-pro')
+        except Exception:
+            model = genai.GenerativeModel('gemini-1.0-pro')
         
-        # Try to extract name (this is a simple implementation, might need refinement)
-        name_patterns = [
-            r'my name is (\w+)',
-            r'i\'m (\w+)',
-            r'call me (\w+)'
-        ]
-        for pattern in name_patterns:
-            name_match = re.search(pattern, text, re.IGNORECASE)
+        # Structured prompt for extracting medical information
+        prompt = f"""Extract the following medical information from the given text in a structured JSON format:
+        1. Name (if mentioned)
+        2. Age (if mentioned)
+        3. Symptoms
+        4. Family History
+        5. Possible Diseases (based on symptoms)
+
+        Instructions:
+        - Extract only if clearly mentioned
+        - Be concise
+        - If no information found for a field, keep it as an empty list or null
+        - Prioritize medical relevance
+
+        Text: "{text}"
+
+        Output Format:
+        {{
+            "name": "string or null",
+            "age": "string or null",
+            "symptoms": ["symptom1", "symptom2", ...],
+            "family_history": ["condition1", "condition2", ...],
+            "possible_diseases": ["disease1", "disease2", ...]
+        }}
+        """
+        
+        # Generate response
+        response = model.generate_content(prompt)
+        
+        # Try to parse the response as JSON
+        import json
+        
+        # Remove any markdown code block formatting
+        response_text = response.text.replace('```json', '').replace('```', '').strip()
+        
+        # Try parsing the JSON
+        try:
+            extracted_info = json.loads(response_text)
+        except json.JSONDecodeError:
+            # Fallback to manual parsing if JSON is malformed
+            extracted_info = {
+                "name": None,
+                "age": None,
+                "symptoms": [],
+                "family_history": [],
+                "possible_diseases": []
+            }
+            
+            # Basic fallback extraction using regex
+            name_match = re.search(r'my name is (\w+)', text, re.IGNORECASE)
             if name_match:
                 extracted_info["name"] = name_match.group(1)
-                break
-        
-        # Extract age using more flexible regex pattern
-        age_patterns = [
-            r'\b(\d{1,3})[\s-]*(years?|yrs?|y\.o\.?|year old)\b',
-            r'\b(I am|I\'m)\s+(\d{1,3})\s*(years? old)\b'
-        ]
-        for pattern in age_patterns:
-            age_match = re.search(pattern, text, re.IGNORECASE)
+            
+            age_match = re.search(r'\b(\d{1,3})[\s-]*(years?|yrs?|y\.o\.?|year old)\b', text, re.IGNORECASE)
             if age_match:
-                # Extract the numeric part
                 extracted_info["age"] = re.search(r'\d+', age_match.group(0)).group(0) + " years"
-                break
         
-        # Expanded list of common symptoms
-        common_symptoms = [
-            "fever", "headache", "pain", "cough", "cold", "nausea", 
-            "vomiting", "dizziness", "fatigue", "tired", "sore throat",
-            "cannot sleep", "insomnia", "ache", "hurt", "rash", 
-            "chest pain", "stomach ache", "migraine", "allergies", 
-            "breathing difficulty", "congestion"
-        ]
-        
-        # Look for symptoms (more robust matching)
-        for symptom in common_symptoms:
-            # Use word boundaries to prevent partial word matches
-            symptom_pattern = fr'\b{re.escape(symptom)}\b'
-            if re.search(symptom_pattern, text, re.IGNORECASE):
-                # Avoid duplicate symptoms
-                if symptom not in extracted_info["symptoms"]:
-                    extracted_info["symptoms"].append(symptom)
-        
-        # Look for family history with more context
-        family_history_patterns = [
-            r'family history of (\w+)',
-            r'my (mother|father|brother|sister|grandfather|grandmother) had',
-            r'family medical history'
-        ]
-        for pattern in family_history_patterns:
-            family_match = re.findall(pattern, text, re.IGNORECASE)
-            if family_match:
-                extracted_info["family_history"].extend(family_match)
-        
-        # Remove duplicates from lists
-        extracted_info["symptoms"] = list(dict.fromkeys(extracted_info["symptoms"]))
-        extracted_info["family_history"] = list(dict.fromkeys(extracted_info["family_history"]))
+        # Ensure lists don't contain duplicates and clean up
+        if "symptoms" in extracted_info:
+            extracted_info["symptoms"] = list(dict.fromkeys(extracted_info["symptoms"]))
+        if "family_history" in extracted_info:
+            extracted_info["family_history"] = list(dict.fromkeys(extracted_info["family_history"]))
+        if "possible_diseases" in extracted_info:
+            extracted_info["possible_diseases"] = list(dict.fromkeys(extracted_info["possible_diseases"]))
         
         return extracted_info
     except Exception as e:
@@ -234,7 +238,8 @@ def extract_medical_info(text):
             "name": None,
             "age": None,
             "symptoms": [],
-            "family_history": []
+            "family_history": [],
+            "possible_diseases": []
         }
 
 def get_all_notes():
