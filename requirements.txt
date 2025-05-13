@@ -9,3 +9,7 @@ langchain==0.2.5
 langchain-openai
 python-dotenv
 google.generativeai
+matplotlib>=3.4.0
+seaborn>=0.11.0
+streamlit>=1.10.0
+requests>=2.27.0

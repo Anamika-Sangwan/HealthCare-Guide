@@ -43,6 +43,78 @@ def predict_disease_route():
 def lipid_profile():
     return render_template('lipid_profile.html')
 
+def analyze_lipid_profile(total_cholesterol, hdl_cholesterol, ldl_cholesterol, triglycerides):
+    """Analyze lipid profile and provide recommendations based on medical guidelines."""
+    # Calculate risk based on standard medical guidelines
+    result = ""
+    risk_level = "Low"
+    recommendations = []
+    
+    # Total Cholesterol Assessment
+    if total_cholesterol < 200:
+        result += "Total Cholesterol: Desirable "
+    elif 200 <= total_cholesterol < 240:
+        result += "Total Cholesterol: Borderline high "
+        risk_level = max(risk_level, "Moderate")
+        recommendations.append("Consider reducing saturated fat intake")
+    else:
+        result += "Total Cholesterol: High "
+        risk_level = "High"
+        recommendations.append("Reduce saturated fat intake and consider consulting a doctor")
+    
+    # HDL Cholesterol Assessment (Higher is better)
+    if hdl_cholesterol >= 60:
+        result += "HDL Cholesterol: Optimal "
+    elif 40 <= hdl_cholesterol < 60:
+        result += "HDL Cholesterol: Normal "
+    else:
+        result += "HDL Cholesterol: Low "
+        risk_level = max(risk_level, "Moderate")
+        recommendations.append("Increase physical activity and consider omega-3 supplements")
+    
+    # LDL Cholesterol Assessment
+    if ldl_cholesterol < 100:
+        result += "LDL Cholesterol: Optimal "
+    elif 100 <= ldl_cholesterol < 130:
+        result += "LDL Cholesterol: Near optimal "
+    elif 130 <= ldl_cholesterol < 160:
+        result += "LDL Cholesterol: Borderline high "
+        risk_level = max(risk_level, "Moderate")
+        recommendations.append("Reduce consumption of trans fats and increase fiber intake")
+    elif 160 <= ldl_cholesterol < 190:
+        result += "LDL Cholesterol: High "
+        risk_level = "High"
+        recommendations.append("Reduce saturated fat intake and increase soluble fiber")
+    else:
+        result += "LDL Cholesterol: Very high "
+        risk_level = "Very High"
+        recommendations.append("Consult a doctor immediately for potential medication")
+    
+    # Triglycerides Assessment
+    if triglycerides < 150:
+        result += "Triglycerides: Normal "
+    elif 150 <= triglycerides < 200:
+        result += "Triglycerides: Borderline high "
+        risk_level = max(risk_level, "Moderate")
+        recommendations.append("Limit sugar and alcohol consumption")
+    elif 200 <= triglycerides < 500:
+        result += "Triglycerides: High "
+        risk_level = "High"
+        recommendations.append("Reduce carbohydrate intake and increase omega-3 fatty acids")
+    else:
+        result += "Triglycerides: Very high "
+        risk_level = "Very High"
+        recommendations.append("Consult a doctor immediately as this may indicate metabolic syndrome")
+    
+    # Add general recommendations
+    if not recommendations:
+        recommendations.append("Maintain a healthy diet and regular exercise")
+    
+    if risk_level in ["High", "Very High"]:
+        recommendations.append("Schedule an appointment with a healthcare provider for a comprehensive evaluation")
+    
+    return result, risk_level, recommendations
+
 @app.route('/analyze_lipid', methods=['POST'])
 def analyze_lipid():
     if request.method == 'POST':
