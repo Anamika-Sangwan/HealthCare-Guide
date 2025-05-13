@@ -15,6 +15,62 @@ app = Flask(__name__)
 def home():
     return render_template('index.html')
 
+def predict_disease(selected_symptoms):
+    """
+    Predict possible diseases based on selected symptoms.
+    This is a placeholder function - in a real application, 
+    this would use a trained ML model.
+    """
+    # Sample disease prediction logic - replace with actual ML model in production
+    symptom_disease_map = {
+        'Fever': ['Common Cold', 'Flu', 'COVID-19'],
+        'Cough': ['Common Cold', 'Flu', 'COVID-19', 'Bronchitis'],
+        'Fatigue': ['Flu', 'COVID-19', 'Anemia', 'Depression'],
+        'Difficulty Breathing': ['COVID-19', 'Asthma', 'Pneumonia'],
+        'Headache': ['Migraine', 'Tension Headache', 'Sinusitis'],
+        'Sore Throat': ['Common Cold', 'Strep Throat', 'Tonsillitis'],
+        'Body Aches': ['Flu', 'COVID-19', 'Fibromyalgia'],
+        'Runny Nose': ['Common Cold', 'Allergies', 'Sinusitis'],
+        'Nausea': ['Food Poisoning', 'Migraine', 'Gastroenteritis'],
+        'Diarrhea': ['Food Poisoning', 'Gastroenteritis', 'IBS'],
+        'Chest Pain': ['Heart Attack', 'Angina', 'Acid Reflux'],
+        'Abdominal Pain': ['Appendicitis', 'Gastritis', 'IBS'],
+        'Dizziness': ['Low Blood Pressure', 'Anemia', 'Vertigo'],
+        'Rash': ['Allergic Reaction', 'Eczema', 'Psoriasis'],
+        'Loss of Taste/Smell': ['COVID-19', 'Common Cold', 'Sinusitis'],
+        'Joint Pain': ['Arthritis', 'Gout', 'Lupus'],
+        'Swelling': ['Injury', 'Infection', 'Allergic Reaction'],
+        'Chills': ['Flu', 'COVID-19', 'Infection'],
+        'Vomiting': ['Food Poisoning', 'Gastroenteritis', 'Migraine'],
+        'Confusion': ['Stroke', 'UTI (in elderly)', 'Medication Side Effect']
+    }
+    
+    # Collect all possible diseases based on symptoms
+    possible_diseases = []
+    for symptom in selected_symptoms:
+        if symptom in symptom_disease_map:
+            possible_diseases.extend(symptom_disease_map[symptom])
+    
+    # Count occurrences of each disease
+    disease_counts = {}
+    for disease in possible_diseases:
+        if disease in disease_counts:
+            disease_counts[disease] += 1
+        else:
+            disease_counts[disease] = 1
+    
+    # Sort by count (most likely first)
+    sorted_diseases = sorted(disease_counts.items(), key=lambda x: x[1], reverse=True)
+    
+    if not sorted_diseases:
+        return "Unable to determine from given symptoms", 0
+    
+    # Return the top disease and a simple confidence metric
+    top_disease = sorted_diseases[0][0]
+    confidence = min(100, (sorted_diseases[0][1] / len(selected_symptoms)) * 100)
+    
+    return top_disease, round(confidence, 1)
+
 @app.route('/symptom_checker')
 def symptom_checker():
     # List of symptoms for checkboxes
