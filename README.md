@@ -58,26 +58,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Configure Gemini API Key
 
-1. Create a `.env` file in the project root:
 
-```
-GEMINI_API_KEY=your_google_gemini_api_key
-SECRET_KEY=your_flask_secret_key
-```
-
-2. Load it in your Flask app using `python-dotenv`:
-
-```python
-from dotenv import load_dotenv
-load_dotenv()
-```
 
 ### Run the App
 
 ```bash
-flask run
+python3 app.py
 ```
 
 The app will be available at `http://localhost:5000`.
