@@ -1,6 +1,4 @@
-/* static/js/main.js */
-
-// Main JavaScript for Health Companion app
+/* Main JavaScript for Health Companion app */
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize tooltips if Bootstrap is used
@@ -40,5 +38,17 @@ document.addEventListener('DOMContentLoaded', function() {
             
             form.classList.add('was-validated');
         }, false);
+    });
+    
+    // Flash message auto-dismiss
+    const flashMessages = document.querySelectorAll('.alert-dismissible');
+    
+    flashMessages.forEach(message => {
+        setTimeout(() => {
+            const closeButton = message.querySelector('.btn-close');
+            if (closeButton) {
+                closeButton.click();
+            }
+        }, 5000); // Auto-dismiss after 5 seconds
     });
 });
