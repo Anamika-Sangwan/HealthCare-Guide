@@ -1,4 +1,4 @@
-# 🏥 Health Assistant Web Application
+# 🏥 DocMate
 
 A Flask-based healthcare assistant web app offering AI-powered tools to support medical professionals and users. It features a **symptom checker**, **lipid profile analyzer**, a **Gemini-powered chatbot**, and a secure **note-taking system for doctors**.
 
