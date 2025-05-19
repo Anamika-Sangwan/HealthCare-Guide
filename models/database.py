@@ -300,28 +300,18 @@ def import_existing_notes():
     """Import existing notes from notes.txt into the database"""
     if not os.path.exists('notes.txt'):
         return
-
-    try:
-        with open('notes.txt', 'r', encoding='utf-8', errors='replace') as f:
-            content = f.read()
-    except Exception as e:
-        print(f"Error reading notes.txt: {e}")
-        return
-
-    notes = content.split('---\n')
-    notes = [note.strip() for note in notes if note.strip()]
-
+        
+    with open('notes.txt', 'r', encoding='windows-1252') as f:
+        content = f.read()
+        notes = content.split('---\n')
+        notes = [note.strip() for note in notes if note.strip()]
+        
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-
+    
     for note in notes:
-        try:
-            cursor.execute('INSERT INTO notes (text) VALUES (?)', (note,))
-        except Exception as e:
-            print(f"Error inserting note into database: {e}")
-            continue
-
+        cursor.execute('INSERT INTO notes (text) VALUES (?)', (note,))
+    
     conn.commit()
     conn.close()
-
 
