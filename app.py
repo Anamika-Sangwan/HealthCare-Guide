@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 # Import custom modules
 from models.database import init_db, save_note, save_summary, get_all_notes, get_note_by_id, delete_note, import_existing_notes, DB_PATH
@@ -24,7 +26,8 @@ import_existing_notes()  # This will import notes from notes.txt
 try:
     import google.generativeai as genai
     # Configure Gemini API Key from environment variable
-    API_KEY = os.environ.get("GEMINI_API_KEY", "your-api-key-here")
+    API_KEY = os.getenv("API_KEY") 
+    print("Loaded API key:", API_KEY)
     genai.configure(api_key=API_KEY)
     
     # Create a model instance
