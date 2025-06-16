@@ -5,80 +5,161 @@ import os
 from datetime import datetime
 
 # Database file path
-DB_PATH = 'medical_notes.db'
+DB_PATH = "medical_notes.db"
+
 
 def init_db():
     """Initialize the database with required tables"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     # Create notes table with proper AUTOINCREMENT
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS notes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            text TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     # Create summaries table with proper FOREIGN KEY
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS summaries (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            note_id INTEGER NOT NULL,
-            summary_data TEXT NOT NULL,
-            is_edited BOOLEAN DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
-        )
-    ''')
-    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS summaries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        note_id INTEGER NOT NULL,
+        summary_data TEXT NOT NULL,
+        is_edited BOOLEAN DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Create follow_up_actions table for the new feature
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS follow_up_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        note_id INTEGER NOT NULL,
+        actions_data TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    )
+    """)
+
     conn.commit()
     conn.close()
+
+
+def get_patient_notes(patient_name):
+    """Get all notes for a specific patient with more flexible name matching"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # Normalize the provided patient name for comparison
+    normalized_patient_name = patient_name.lower().strip()
+
+    cursor.execute("""
+    SELECT n.id, n.text, n.created_at, s.summary_data
+    FROM notes n
+    LEFT JOIN summaries s ON n.id = s.note_id
+    ORDER BY n.created_at
+    """)
+
+    notes = []
+    for row in cursor.fetchall():
+        note = {
+            "id": row["id"],
+            "original": row["text"],
+            "created_at": row["created_at"],
+        }
+
+        if row["summary_data"]:
+            try:
+                summary = json.loads(row["summary_data"])
+                # More flexible patient name matching
+                is_match = False
+
+                # Check for patient_details structure
+                if "patient_details" in summary and summary["patient_details"].get(
+                    "name"
+                ):
+                    patient_in_note = summary["patient_details"]["name"].lower().strip()
+                    # Use fuzzy matching instead of exact match
+                    if (
+                        normalized_patient_name in patient_in_note
+                        or patient_in_note in normalized_patient_name
+                        or normalized_patient_name.split()[0] in patient_in_note
+                    ):  # Match on first name
+                        is_match = True
+
+                if is_match:
+                    note["summary"] = summary
+                    notes.append(note)
+
+            except json.JSONDecodeError:
+                continue
+
+    # For debugging
+    if not notes:
+        print(f"No notes found for patient: {patient_name}")
+    else:
+        print(f"Found {len(notes)} notes for patient: {patient_name}")
+
+    conn.close()
+    return notes
+
 
 def save_note(note_text):
     """Save a new note to the database"""
     try:
         # Generate a unique ID first
         unique_id = generate_unique_id()
-        
+
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        
+
         # Use the unique ID explicitly
-        cursor.execute('INSERT INTO notes (id, text) VALUES (?, ?)', (unique_id, note_text))
+        cursor.execute(
+            "INSERT INTO notes (id, text) VALUES (?, ?)", (unique_id, note_text)
+        )
+
         conn.commit()
         conn.close()
-        
+
         print(f"Note saved with unique ID: {unique_id}")
         return unique_id
-        
+
     except Exception as e:
         print(f"Error in save_note: {str(e)}")
         import traceback
+
         traceback.print_exc()
         return None
+
 
 def generate_unique_id():
     """Generate a guaranteed unique ID for a new note"""
     import time
     import random
-    
+
     # Create a timestamp-based ID with random component to ensure uniqueness
     timestamp = int(time.time() * 1000)  # Milliseconds since epoch
     random_part = random.randint(1000, 9999)  # Add some randomness
     unique_id = timestamp + random_part
-    
+
     # Verify this ID doesn't exist in the database
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute('SELECT id FROM notes WHERE id = ?', (unique_id,))
+
+    cursor.execute("SELECT id FROM notes WHERE id = ?", (unique_id,))
     if cursor.fetchone():
         # In the extremely unlikely case of a collision, add more randomness
         unique_id += random.randint(10000, 99999)
+
     conn.close()
-    
+
     return unique_id
+
 
 def save_summary(note_id, summary_data, is_edited=False):
     """Save a summary for a note"""
@@ -90,57 +171,61 @@ def save_summary(note_id, summary_data, is_edited=False):
                 "patient_details": {"name": "Unknown Patient"},
                 "chief_complaints": [],
                 "symptoms": [],
-                "allergies": []
+                "allergies": [],
             }
-        
+
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        
+
         # Ensure the summaries table exists
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS summaries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                note_id INTEGER NOT NULL,
-                summary_data TEXT NOT NULL,
-                is_edited BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (note_id) REFERENCES notes(id)
-            )
-        ''')
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS summaries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_id INTEGER NOT NULL,
+            summary_data TEXT NOT NULL,
+            is_edited BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (note_id) REFERENCES notes(id)
+        )
+        """)
+
         conn.commit()
-        
+
         # Convert dict to JSON string for storage
         summary_json = json.dumps(summary_data)
-        
+
         # Check if a summary already exists for this note
-        cursor.execute('SELECT id FROM summaries WHERE note_id = ?', (note_id,))
+        cursor.execute("SELECT id FROM summaries WHERE note_id = ?", (note_id,))
         existing = cursor.fetchone()
-        
+
         if existing:
             # Update the existing summary
             cursor.execute(
-                'UPDATE summaries SET summary_data = ?, is_edited = ? WHERE note_id = ?',
-                (summary_json, 1 if is_edited else 0, note_id)
+                "UPDATE summaries SET summary_data = ?, is_edited = ? WHERE note_id = ?",
+                (summary_json, 1 if is_edited else 0, note_id),
             )
         else:
             # Insert a new summary
             cursor.execute(
-                'INSERT INTO summaries (note_id, summary_data, is_edited) VALUES (?, ?, ?)',
-                (note_id, summary_json, 1 if is_edited else 0)
+                "INSERT INTO summaries (note_id, summary_data, is_edited) VALUES (?, ?, ?)",
+                (note_id, summary_json, 1 if is_edited else 0),
             )
-        
+
         conn.commit()
         conn.close()
-        
+
         # Print a confirmation message for debugging
         print(f"Summary saved for note ID: {note_id}, Is edited: {is_edited}")
+
         return True
-        
+
     except Exception as e:
         print(f"Error in save_summary: {str(e)}")
         import traceback
+
         traceback.print_exc()
         return False
+
 
 def get_all_notes():
     """Get all notes with their summaries"""
@@ -148,163 +233,164 @@ def get_all_notes():
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row  # This enables column access by name
         cursor = conn.cursor()
-        
+
         # Ensure the notes table exists
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS notes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                text TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+
         # Ensure the summaries table exists
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS summaries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                note_id INTEGER NOT NULL,
-                summary_data TEXT NOT NULL,
-                is_edited BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (note_id) REFERENCES notes(id)
-            )
-        ''')
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS summaries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_id INTEGER NOT NULL,
+            summary_data TEXT NOT NULL,
+            is_edited BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (note_id) REFERENCES notes(id)
+        )
+        """)
+
+        # Ensure follow_up_actions table exists
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS follow_up_actions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_id INTEGER NOT NULL,
+            actions_data TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+        )
+        """)
+
         conn.commit()
-        
-        cursor.execute('''
-            SELECT n.id, n.text, n.created_at, s.summary_data
-            FROM notes n
-            LEFT JOIN summaries s ON n.id = s.note_id
-            ORDER BY n.created_at DESC
-        ''')
-        
+
+        cursor.execute("""
+        SELECT n.id, n.text, n.created_at, s.summary_data
+        FROM notes n
+        LEFT JOIN summaries s ON n.id = s.note_id
+        ORDER BY n.created_at DESC
+        """)
+
         notes = []
         for row in cursor.fetchall():
             note = {
-                'id': row['id'],
-                'original': row['text'],
-                'created_at': row['created_at']
+                "id": row["id"],
+                "original": row["text"],
+                "created_at": row["created_at"],
             }
-            
-            if row['summary_data']:
+
+            if row["summary_data"]:
                 try:
-                    note['summary'] = json.loads(row['summary_data'])
+                    note["summary"] = json.loads(row["summary_data"])
                 except json.JSONDecodeError:
                     print(f"Warning: Invalid JSON in summary_data for note {row['id']}")
-                    note['summary'] = {
+                    note["summary"] = {
                         "patient_details": {"name": "Unknown Patient"},
                         "chief_complaints": [],
                         "symptoms": [],
-                        "allergies": []
+                        "allergies": [],
                     }
             else:
-                note['summary'] = None
-            
+                note["summary"] = None
+
             notes.append(note)
-        
+
         conn.close()
         return notes
-        
+
     except Exception as e:
         print(f"Error in get_all_notes: {str(e)}")
         import traceback
+
         traceback.print_exc()
         return []
 
+
 def update_note_text(note_id, new_text):
     """Update the text of an existing note
+
     Args:
         note_id (int): ID of the note to update
         new_text (str): New text content
+
     Returns:
         bool: True if update successful, False otherwise
     """
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        
+
         # Update the note text
-        cursor.execute('UPDATE notes SET text = ? WHERE id = ?', (new_text, note_id))
+        cursor.execute("UPDATE notes SET text = ? WHERE id = ?", (new_text, note_id))
+
         success = cursor.rowcount > 0
-        
+
         conn.commit()
         conn.close()
+
         return success
-        
     except Exception as e:
         print(f"Error updating note text: {str(e)}")
         return False
+
 
 def get_note_by_id(note_id):
     """Get a specific note by its ID"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    
-    cursor.execute('''
-        SELECT n.id, n.text, n.created_at, s.summary_data
-        FROM notes n
-        LEFT JOIN summaries s ON n.id = s.note_id
-        WHERE n.id = ?
-    ''', (note_id,))
-    
+
+    cursor.execute(
+        """
+    SELECT n.id, n.text, n.created_at, s.summary_data
+    FROM notes n
+    LEFT JOIN summaries s ON n.id = s.note_id
+    WHERE n.id = ?
+    """,
+        (note_id,),
+    )
+
     row = cursor.fetchone()
     if not row:
         conn.close()
         return None
-    
-    note = {
-        'id': row['id'],
-        'original': row['text'],
-        'created_at': row['created_at']
-    }
-    
-    if row['summary_data']:
-        note['summary'] = json.loads(row['summary_data'])
+
+    note = {"id": row["id"], "original": row["text"], "created_at": row["created_at"]}
+
+    if row["summary_data"]:
+        note["summary"] = json.loads(row["summary_data"])
     else:
-        note['summary'] = None
-    
+        note["summary"] = None
+
     conn.close()
     return note
+
 
 def delete_note(note_id):
     """Delete a note and its summaries"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     # First delete related summaries (because of foreign key constraint)
-    cursor.execute('DELETE FROM summaries WHERE note_id = ?', (note_id,))
-    
+    cursor.execute("DELETE FROM summaries WHERE note_id = ?", (note_id,))
+
+    # Delete related follow-up actions
+    cursor.execute("DELETE FROM follow_up_actions WHERE note_id = ?", (note_id,))
+
     # Then delete the note
-    cursor.execute('DELETE FROM notes WHERE id = ?', (note_id,))
+    cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+
     deleted = cursor.rowcount > 0
-    
+
     conn.commit()
     conn.close()
+
     return deleted
 
-def save_edited_summary(note_id, edited_summary):
-    """Save an edited summary (alias for save_summary with is_edited=True)"""
-    return save_summary(note_id, edited_summary, is_edited=True)
-
-def get_edited_summary(note_id):
-    """Get the edited summary for a note"""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        cursor.execute('SELECT summary_data FROM summaries WHERE note_id = ? AND is_edited = 1', (note_id,))
-        row = cursor.fetchone()
-        
-        conn.close()
-        
-        if row:
-            return json.loads(row[0])
-        return None
-        
-    except Exception as e:
-        print(f"Error getting edited summary: {str(e)}")
-        return None
 
 # Import existing notes from notes.txt if it exists
 def import_existing_notes():
@@ -399,3 +485,73 @@ def import_existing_notes():
         print(f"Unexpected error importing notes: {str(e)}")
         import traceback
         traceback.print_exc()
+
+
+# Function to get follow-up actions for a note
+def get_follow_up_actions(note_id):
+    """Get follow-up actions for a note"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+    SELECT actions_data
+    FROM follow_up_actions
+    WHERE note_id = ?
+    """,
+        (note_id,),
+    )
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row and row["actions_data"]:
+        try:
+            return json.loads(row["actions_data"])
+        except json.JSONDecodeError:
+            return None
+
+    return None
+
+
+# Function to save follow-up actions
+def save_follow_up_actions(note_id, actions):
+    """Save follow-up actions to the database"""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Create follow_up_actions table if it doesn't exist
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS follow_up_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        note_id INTEGER NOT NULL,
+        actions_data TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Check if we already have actions for this note
+    cursor.execute("SELECT id FROM follow_up_actions WHERE note_id = ?", (note_id,))
+    existing = cursor.fetchone()
+
+    actions_json = json.dumps(actions)
+
+    if existing:
+        # Update existing actions
+        cursor.execute(
+            "UPDATE follow_up_actions SET actions_data = ? WHERE note_id = ?",
+            (actions_json, note_id),
+        )
+    else:
+        # Insert new actions
+        cursor.execute(
+            "INSERT INTO follow_up_actions (note_id, actions_data) VALUES (?, ?)",
+            (note_id, actions_json),
+        )
+
+    conn.commit()
+    conn.close()
+
+    return True
